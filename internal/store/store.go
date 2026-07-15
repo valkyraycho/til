@@ -2,19 +2,23 @@ package store
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"time"
 
-	_ "modernc.org/sqlite"
+	"modernc.org/sqlite"
+	sqlitelib "modernc.org/sqlite/lib"
 )
 
 const (
-	schemaVersion = 1
-	timeFormat    = "2006-01-02T15:04:05Z"
-	dirPerm       = 0o700
-	filePerm      = 0o600
+	schemaVersion      = 1
+	timeFormat         = "2006-01-02T15:04:05Z"
+	dirPerm            = 0o700
+	filePerm           = 0o600
+	migrateRetryWindow = 5 * time.Second
+	migrateRetryDelay  = 50 * time.Millisecond
 )
 
 const schema = `
@@ -74,7 +78,26 @@ func (s *Store) Close() error {
 	return s.db.Close()
 }
 
+// ponytail: modernc can surface SQLITE_BUSY from BEGIN IMMEDIATE without
+// consulting busy_timeout when connections race a fresh database (seen on
+// windows), so first-run migration retries in a bounded loop.
 func migrate(db *sql.DB) error {
+	deadline := time.Now().Add(migrateRetryWindow)
+	for {
+		err := migrateOnce(db)
+		if err == nil || !isBusy(err) || time.Now().After(deadline) {
+			return err
+		}
+		time.Sleep(migrateRetryDelay)
+	}
+}
+
+func isBusy(err error) bool {
+	var serr *sqlite.Error
+	return errors.As(err, &serr) && serr.Code()&0xff == sqlitelib.SQLITE_BUSY
+}
+
+func migrateOnce(db *sql.DB) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return fmt.Errorf("begin migration: %w", err)
