@@ -1,0 +1,4 @@
+<article class="entry">
+  <div class="meta">#{{.Entry.ID}} · {{.Entry.CreatedAt.Format "2006-01-02 15:04"}}{{range .Entry.Tags}} <span class="tag">{{.}}</span>{{end}}</div>
+  <div class="body">{{.HTML}}</div>
+</article>

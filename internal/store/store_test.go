@@ -445,6 +445,26 @@ func TestCreatedAtFixedWidthUTC(t *testing.T) {
 	}
 }
 
+func TestEntryTitle(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+		want string
+	}{
+		{"first line", "docker fix\ndetails here", "docker fix"},
+		{"single line", "one liner", "one liner"},
+		{"trims", "  padded title  \nrest", "padded title"},
+		{"truncates long", strings.Repeat("x", 100), strings.Repeat("x", 80) + "…"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := (Entry{Body: tt.body}).Title(); got != tt.want {
+				t.Errorf("Title() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func ids(entries []Entry) []int64 {
 	out := make([]int64, len(entries))
 	for i, e := range entries {

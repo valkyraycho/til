@@ -9,9 +9,21 @@ import (
 	"time"
 )
 
-const maxQueryRunes = 256
+const (
+	maxQueryRunes = 256
+	maxTitleRunes = 80
+)
 
 var ErrNotFound = errors.New("entry not found")
+
+func (e Entry) Title() string {
+	title, _, _ := strings.Cut(e.Body, "\n")
+	title = strings.TrimSpace(title)
+	if runes := []rune(title); len(runes) > maxTitleRunes {
+		return string(runes[:maxTitleRunes]) + "…"
+	}
+	return title
+}
 
 func NormalizeTags(tags []string) []string {
 	var out []string

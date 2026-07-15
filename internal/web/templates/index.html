@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>til</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>til</h1>
+    <input type="search" name="q" placeholder="search notes…" autofocus autocomplete="off"
+           hx-get="/search" hx-trigger="keyup changed delay:300ms, search"
+           hx-target="#results" hx-swap="innerHTML">
+    <nav class="tags">
+      {{range .Tags}}<button class="tag" hx-get="/search?tag={{. | urlquery}}"
+        hx-target="#results" hx-swap="innerHTML">{{.}}</button>{{end}}
+    </nav>
+  </header>
+  <main id="results">
+    {{template "rows.html" .Rows}}
+  </main>
+</body>
+</html>
