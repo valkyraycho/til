@@ -1,6 +1,7 @@
 package store
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -442,6 +443,42 @@ func TestCreatedAtFixedWidthUTC(t *testing.T) {
 	}
 	if _, err := time.Parse("2006-01-02T15:04:05Z", raw); err != nil {
 		t.Errorf("created_at %q is not fixed-width RFC3339 UTC: %v", raw, err)
+	}
+}
+
+func TestOpenUncreatableDirectory(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("/dev/null path semantics are unix-specific")
+	}
+	if _, err := Open("/dev/null/nope/til.db"); err == nil {
+		t.Fatalf("Open under /dev/null succeeded, want error")
+	}
+}
+
+func TestUpdateAndDeleteMissingEntry(t *testing.T) {
+	s := newTestStore(t)
+	if err := s.UpdateBody(999, "ghost"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("UpdateBody(999) = %v, want ErrNotFound", err)
+	}
+	if err := s.Delete(999); !errors.Is(err, ErrNotFound) {
+		t.Errorf("Delete(999) = %v, want ErrNotFound", err)
+	}
+	if err := s.UpdateBody(999, "  "); err == nil {
+		t.Errorf("UpdateBody with blank body succeeded, want error")
+	}
+}
+
+func TestCorruptedTimestampSurfacesError(t *testing.T) {
+	s := newTestStore(t)
+	e := mustAdd(t, s, "soon to be corrupted")
+	if _, err := s.db.Exec("UPDATE entries SET created_at = 'garbage' WHERE id = ?", e.ID); err != nil {
+		t.Fatalf("corrupt timestamp: %v", err)
+	}
+	if _, err := s.Get(e.ID); err == nil {
+		t.Errorf("Get with corrupt created_at succeeded, want error")
+	}
+	if _, err := s.Search("", "", 50, 0); err == nil {
+		t.Errorf("Search with corrupt created_at succeeded, want error")
 	}
 }
 

@@ -4,9 +4,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"syscall"
 	"testing"
+	"time"
 
 	"github.com/valkyraycho/til/internal/store"
 )
@@ -159,6 +163,44 @@ func TestSecurityHeaders(t *testing.T) {
 		if got := rec.Header().Get(k); got != v {
 			t.Errorf("%s = %q, want %q", k, got, v)
 		}
+	}
+}
+
+func TestServeGracefulShutdownOnSignal(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("self-signaling not supported on windows")
+	}
+	s := newTestStore(t)
+	const port = 47613
+	done := make(chan error, 1)
+	go func() { done <- Serve(s, port) }()
+
+	up := false
+	for i := 0; i < 100; i++ {
+		resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/", port))
+		if err == nil {
+			resp.Body.Close()
+			if resp.StatusCode == http.StatusOK {
+				up = true
+				break
+			}
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	if !up {
+		t.Fatal("server never became reachable")
+	}
+
+	if err := syscall.Kill(os.Getpid(), syscall.SIGINT); err != nil {
+		t.Fatalf("send SIGINT: %v", err)
+	}
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("Serve returned error on graceful shutdown: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("Serve did not shut down within 5s of SIGINT")
 	}
 }
 
