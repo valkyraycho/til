@@ -127,7 +127,7 @@ func cmdEdit(args []string) error {
 	if strings.TrimSpace(body) == "" {
 		return errors.New("empty note, not saved")
 	}
-	if err := st.UpdateBody(id, body); err != nil {
+	if err := st.Update(id, body, e.Tags); err != nil {
 		return err
 	}
 	fmt.Printf("updated #%d\n", id)

@@ -98,10 +98,11 @@ func (s *Store) Get(id int64) (Entry, error) {
 	return e, nil
 }
 
-func (s *Store) UpdateBody(id int64, body string) error {
+func (s *Store) Update(id int64, body string, tags []string) error {
 	if strings.TrimSpace(body) == "" {
 		return errors.New("note body is empty")
 	}
+	tags = NormalizeTags(tags)
 	tx, err := s.db.Begin()
 	if err != nil {
 		return fmt.Errorf("begin update: %w", err)
@@ -115,7 +116,16 @@ func (s *Store) UpdateBody(id int64, body string) error {
 	if n, _ := res.RowsAffected(); n == 0 {
 		return ErrNotFound
 	}
-	if _, err := tx.Exec("UPDATE entries_fts SET body = ? WHERE rowid = ?", body, id); err != nil {
+	if _, err := tx.Exec("DELETE FROM entry_tags WHERE entry_id = ?", id); err != nil {
+		return fmt.Errorf("clear tags of entry %d: %w", id, err)
+	}
+	for _, tag := range tags {
+		if _, err := tx.Exec("INSERT OR IGNORE INTO entry_tags (entry_id, tag) VALUES (?, ?)", id, tag); err != nil {
+			return fmt.Errorf("insert tag %q: %w", tag, err)
+		}
+	}
+	if _, err := tx.Exec("UPDATE entries_fts SET body = ?, tags = ? WHERE rowid = ?",
+		body, strings.Join(tags, " "), id); err != nil {
 		return fmt.Errorf("reindex entry %d: %w", id, err)
 	}
 	if err := tx.Commit(); err != nil {

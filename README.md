@@ -37,8 +37,9 @@ til rm 12                      # delete a note
 til web                        # browse + live search at http://127.0.0.1:4711
 ```
 
-The web UI is read-only by design: live search as you type, tag chips,
-markdown rendering. All mutations go through the CLI.
+The web UI does everything the CLI does except open your `$EDITOR`: live
+search as you type, tag chips, markdown rendering, plus creating, editing,
+and deleting notes inline. Press `/` anywhere to jump to search.
 
 ## Data
 
@@ -58,9 +59,10 @@ corrupt the copy.
 ## Security notes
 
 `til web` binds to `127.0.0.1` only, validates the `Host` header (blocks
-DNS rebinding), and serves with a strict `Content-Security-Policy`. On a
-*shared multi-user machine*, be aware that other local users can reach the
-port while `til web` runs — this tool assumes a personal machine.
+DNS rebinding), rejects cross-site form POSTs via `Origin` checking (CSRF),
+and serves with a strict `Content-Security-Policy`. On a *shared multi-user
+machine*, be aware that other local users can reach the port while `til web`
+runs — this tool assumes a personal machine.
 
 ## Development
 

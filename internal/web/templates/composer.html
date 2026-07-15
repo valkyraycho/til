@@ -1,0 +1,11 @@
+<details class="composer" id="composer"{{if .OOB}} hx-swap-oob="true"{{end}}>
+  <summary><span class="plus">＋</span> new entry</summary>
+  <form hx-post="/entries" hx-target="#results" hx-swap="innerHTML">
+    <textarea name="body" rows="6" required
+              placeholder="today I learned… (markdown welcome, first line becomes the title)"></textarea>
+    <div class="form-foot">
+      <input name="tags" placeholder="tags, comma-separated" autocomplete="off">
+      <button type="submit" class="stamp">record it</button>
+    </div>
+  </form>
+</details>

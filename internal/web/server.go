@@ -41,8 +41,32 @@ func New(st *store.Store, port int) http.Handler {
 	mux.HandleFunc("GET /{$}", s.index)
 	mux.HandleFunc("GET /search", s.search)
 	mux.HandleFunc("GET /entries/{id}", s.entry)
+	mux.HandleFunc("GET /entries/{id}/row", s.entryRow)
+	mux.HandleFunc("GET /entries/{id}/edit", s.entryEditForm)
+	mux.HandleFunc("POST /entries", s.entryCreate)
+	mux.HandleFunc("POST /entries/{id}", s.entryUpdate)
+	mux.HandleFunc("POST /entries/{id}/delete", s.entryDelete)
 	mux.Handle("GET /static/", http.FileServerFS(assets))
-	return securityHeaders(hostCheck(port, mux))
+	return securityHeaders(hostCheck(port, originCheck(port, mux)))
+}
+
+// originCheck is the CSRF guard: the Host check cannot stop cross-site form
+// POSTs (the browser targets 127.0.0.1 directly), but browsers always attach
+// an Origin header to cross-site POSTs, so a foreign Origin is rejected.
+func originCheck(port int, next http.Handler) http.Handler {
+	allowed := map[string]bool{
+		fmt.Sprintf("http://127.0.0.1:%d", port): true,
+		fmt.Sprintf("http://localhost:%d", port): true,
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			if origin := r.Header.Get("Origin"); origin != "" && !allowed[origin] {
+				http.Error(w, "forbidden origin", http.StatusForbidden)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func Serve(st *store.Store, port int) error {

@@ -1,0 +1,11 @@
+<article class="entry editing">
+  <form hx-post="/entries/{{.Entry.ID}}" hx-target="closest article" hx-swap="outerHTML">
+    <textarea name="body" rows="12" required>{{.Entry.Body}}</textarea>
+    <div class="form-foot">
+      <input name="tags" value="{{.Tags}}" placeholder="tags, comma-separated" autocomplete="off">
+      <button type="submit" class="stamp">save</button>
+      <button type="button" hx-get="/entries/{{.Entry.ID}}"
+              hx-target="closest article" hx-swap="outerHTML">cancel</button>
+    </div>
+  </form>
+</article>

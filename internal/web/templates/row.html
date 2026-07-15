@@ -1,0 +1,5 @@
+<div class="row" hx-get="/entries/{{.ID}}" hx-swap="outerHTML" title="expand">
+  <span class="row-id">{{.ID}}</span>
+  <span class="row-title">{{.Title}}</span>
+  <span class="meta">{{.CreatedAt.Format "02 Jan"}}{{range .Tags}} <span class="tag">{{.}}</span>{{end}}</span>
+</div>

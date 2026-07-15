@@ -222,11 +222,11 @@ func TestDeleteSyncsFTS(t *testing.T) {
 	}
 }
 
-func TestUpdateBodySyncsFTS(t *testing.T) {
+func TestUpdateSyncsFTS(t *testing.T) {
 	s := newTestStore(t)
 	e := mustAdd(t, s, "original zebra content")
-	if err := s.UpdateBody(e.ID, "replacement yak content"); err != nil {
-		t.Fatalf("UpdateBody: %v", err)
+	if err := s.Update(e.ID, "replacement yak content", e.Tags); err != nil {
+		t.Fatalf("Update: %v", err)
 	}
 	if got, _ := s.Search("zebra", "", 50, 0); len(got) != 0 {
 		t.Errorf("old term still matches after update")
@@ -234,6 +234,30 @@ func TestUpdateBodySyncsFTS(t *testing.T) {
 	got, err := s.Search("yak", "", 50, 0)
 	if err != nil || len(got) != 1 {
 		t.Errorf("new term not found after update: %v, %v", ids(got), err)
+	}
+}
+
+func TestUpdateReplacesTags(t *testing.T) {
+	s := newTestStore(t)
+	e := mustAdd(t, s, "tag swap note", "old-tag", "keeper")
+	if err := s.Update(e.ID, "tag swap note", []string{"Keeper", "new-tag"}); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	got, err := s.Get(e.ID)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if len(got.Tags) != 2 || got.Tags[0] != "keeper" || got.Tags[1] != "new-tag" {
+		t.Errorf("tags = %v, want [keeper new-tag]", got.Tags)
+	}
+	if res, _ := s.Search("", "old-tag", 50, 0); len(res) != 0 {
+		t.Errorf("removed tag still filters")
+	}
+	if res, _ := s.Search("swap", "new-tag", 50, 0); len(res) != 1 {
+		t.Errorf("new tag not searchable via FTS+tag")
+	}
+	if tags, _ := s.Tags(); len(tags) != 2 {
+		t.Errorf("global tags = %v, want 2", tags)
 	}
 }
 
@@ -457,14 +481,14 @@ func TestOpenUncreatableDirectory(t *testing.T) {
 
 func TestUpdateAndDeleteMissingEntry(t *testing.T) {
 	s := newTestStore(t)
-	if err := s.UpdateBody(999, "ghost"); !errors.Is(err, ErrNotFound) {
-		t.Errorf("UpdateBody(999) = %v, want ErrNotFound", err)
+	if err := s.Update(999, "ghost", nil); !errors.Is(err, ErrNotFound) {
+		t.Errorf("Update(999) = %v, want ErrNotFound", err)
 	}
 	if err := s.Delete(999); !errors.Is(err, ErrNotFound) {
 		t.Errorf("Delete(999) = %v, want ErrNotFound", err)
 	}
-	if err := s.UpdateBody(999, "  "); err == nil {
-		t.Errorf("UpdateBody with blank body succeeded, want error")
+	if err := s.Update(999, "  ", nil); err == nil {
+		t.Errorf("Update with blank body succeeded, want error")
 	}
 }
 

@@ -3,21 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>til</title>
+  <title>til — field notes</title>
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/htmx.min.js" defer></script>
+  <script src="/static/app.js" defer></script>
 </head>
 <body>
-  <header>
-    <h1>til</h1>
-    <input type="search" name="q" placeholder="search notes…" autofocus autocomplete="off"
-           hx-get="/search" hx-trigger="keyup changed delay:300ms, search"
-           hx-target="#results" hx-swap="innerHTML">
+  <header class="masthead">
+    <div class="mast-row">
+      <h1 class="wordmark">til<span class="mark-dot">.</span></h1>
+      <p class="dateline">{{.Today}}</p>
+    </div>
+    <div class="searchbar">
+      <input type="search" name="q" placeholder="search the journal…" autofocus autocomplete="off"
+             hx-get="/search" hx-trigger="keyup changed delay:300ms, search"
+             hx-target="#results" hx-swap="innerHTML">
+      <kbd>/</kbd>
+    </div>
     <nav class="tags">
+      <button class="tag" hx-get="/search" hx-target="#results" hx-swap="innerHTML">all</button>
       {{range .Tags}}<button class="tag" hx-get="/search?tag={{. | urlquery}}"
         hx-target="#results" hx-swap="innerHTML">{{.}}</button>{{end}}
     </nav>
   </header>
+  {{template "composer.html" .Composer}}
   <main id="results">
     {{template "rows.html" .Rows}}
   </main>

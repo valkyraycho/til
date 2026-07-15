@@ -1,11 +1,6 @@
 {{if .Entries}}
-{{range .Entries}}
-<div class="row" hx-get="/entries/{{.ID}}" hx-swap="outerHTML" title="expand">
-  <span class="title">{{.Title}}</span>
-  <span class="meta">{{.CreatedAt.Format "2006-01-02"}}{{range .Tags}} <span class="tag">{{.}}</span>{{end}}</span>
-</div>
-{{end}}
-{{if .NextURL}}<button class="more" hx-get="{{.NextURL}}" hx-swap="outerHTML">load more</button>{{end}}
+{{range .Entries}}{{template "row.html" .}}{{end}}
+{{if .NextURL}}<button class="more" hx-get="{{.NextURL}}" hx-swap="outerHTML">turn the page →</button>{{end}}
 {{else}}
-<p class="empty">no notes found</p>
+<p class="empty">nothing here yet — <code>til add</code> something worth remembering</p>
 {{end}}

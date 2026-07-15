@@ -13,6 +13,7 @@ func TestMarkdown(t *testing.T) {
 		wantAbsent  string
 	}{
 		{"heading", "# Title", "<h1>Title</h1>", ""},
+		{"newline is a line break", "first line\nsecond line", "<br>", ""},
 		{"code block", "```go\nfmt.Println(1)\n```", "<code class=\"language-go\"", ""},
 		{"link", "[docs](https://example.com)", `<a href="https://example.com"`, ""},
 		{"gfm table", "| a | b |\n|---|---|\n| 1 | 2 |", "<table>", ""},

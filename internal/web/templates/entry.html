@@ -1,4 +1,14 @@
 <article class="entry">
-  <div class="meta">#{{.Entry.ID}} · {{.Entry.CreatedAt.Format "2006-01-02 15:04"}}{{range .Entry.Tags}} <span class="tag">{{.}}</span>{{end}}</div>
-  <div class="body">{{.HTML}}</div>
+  <header class="entry-head">
+    <span class="entry-no">№ {{.Entry.ID}}</span>
+    <span class="meta">{{.Entry.CreatedAt.Format "02 Jan 2006 · 15:04"}}{{range .Entry.Tags}} <span class="tag">{{.}}</span>{{end}}</span>
+    <span class="entry-actions">
+      <button hx-get="/entries/{{.Entry.ID}}/edit" hx-target="closest article" hx-swap="outerHTML">edit</button>
+      <button class="danger" hx-post="/entries/{{.Entry.ID}}/delete"
+              hx-confirm="Tear out entry № {{.Entry.ID}}? This cannot be undone."
+              hx-target="closest article" hx-swap="outerHTML">delete</button>
+      <button hx-get="/entries/{{.Entry.ID}}/row" hx-target="closest article" hx-swap="outerHTML">close</button>
+    </span>
+  </header>
+  <div class="entry-body">{{.HTML}}</div>
 </article>
